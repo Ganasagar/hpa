@@ -1,27 +1,27 @@
-### Horizontal Pod autoscaling (HPA
+# Horizontal Pod autoscaling (HPA
 This repo installs and configures HPA workloads on MKE 
 
-# Rre-reqs
+### Rre-reqs
 1. MKE based k8s cluster 1.12.3 or above 
 2. Prometheus server  
 
-# Steps 
+### Steps 
 1. Download the helm repository for prometheus adapter 
 2. Update and install the Prometheus-Adapter helm chart for custom metrics to be consumed by HPA.
 3. Define and create the custom metrics so that adpater would start scapping them.
 4. Create the HPA object.
 5. Test scalling based on HPA
 
-# Installation:
+### Installation:
 
-Download helm charts
+####1. Download helm charts
 ```bash
 git clone https://github.com/helm/charts.git
 
 # cd into the stable charts directory
 cd charts
 ```
-Configure parameters for our installation. 
+####2. Configure parameters for our installation and install the adapter. 
 ```
 While you can add and custom tweak the installation based on the parameters, the two options that are vital are 
   a. prometheus.url
@@ -32,10 +32,24 @@ Edit the values.yaml file to add these changes below is the sample
 prometheus:
   url: http://prometheus.istio-system.svc.cluster.local
   port: 9090
+  
+# Install the adapter
+helm template . --name prometheus-hpa-adapter --namespace monitoring > prometheus-adpater-install.yaml
+
+kubectl apply -f prometheus-adpater-install.yaml
+
+# verify deployment is successful 
+kubectl get pods -n monitoring
+
+# validate default custom metrics exposed by prometheus adapter by running command below
+
+kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1 | jq .
+
+
 ```
 
+
 Additional configuration parameters
-## Configuration
 ```
 The following table lists the configurable parameters of the Prometheus Adapter chart and their default values.
 
@@ -69,6 +83,67 @@ The following table lists the configurable parameters of the Prometheus Adapter 
 | `tolerations`                   | List of node taints to tolerate                                                 | `[]`                                        |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+```
+#### 3. Define and create custom metric 
 
+The prometheus adapter repository should have a configmap set up as a part of default installation. 
+Make a copy and lets edit that to add our custom metrics that we desire to be scraped by the adapter, below is a sample. 
+Prepare the following configMap file, replace the {{ .chart }} and {{ .release }} with the content from the default configMap file created by helm.
 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: prometheus-adapter
+    chart: {{ .chart }}
+    heritage: Tiller
+    release: {{ .release}}
+  name: {{ .release }}-prometheus-adapter
+  namespace: default
+data:
+  config.yaml: |
+    rules:
+    - seriesQuery: '{__name__= "myapp_custom_metric"}'
+      seriesFilters: []
+      resources:
+        overrides:
+          k8s_namespace:
+            resource: namespace
+          k8s_pod_name:
+            resource: pod
+      name:
+        matches: "myapp_custom_metric"
+        as: ""
+      metricsQuery: <<.Series>>{<<.LabelMatchers>>,container_name!="POD"}
+      
+ ```
+ validate the custom metrics 
+ 
+ ```bash
+ $ kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1  | jq
+{
+  "kind": "APIResourceList",
+  "apiVersion": "v1",
+  "groupVersion": "custom.metrics.k8s.io/v1beta1",
+  "resources": [
+    {
+      "name": "namespaces/myapp_custom_metric",
+      "singularName": "",
+      "namespaced": false,
+      "kind": "MetricValueList",
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "name": "pods/myapp_custom_metric",
+      "singularName": "",
+      "namespaced": true,
+      "kind": "MetricValueList",
+      "verbs": [
+        "get"
+      ]
+    }
+  ]
+ ```
 
