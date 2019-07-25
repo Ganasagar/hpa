@@ -58,9 +58,5 @@ The following table lists the configurable parameters of the Prometheus Adapter 
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
-```console
-$ helm install --name my-release \
-  --set logLevel=1 \
- stable/prometheus-adapter
-```
+
 
