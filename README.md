@@ -89,7 +89,7 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 The prometheus adapter repository should have a configmap set up as a part of default installation. 
 Make a copy and lets edit that to add our custom metrics that we desire to be scraped by the adapter, below is a sample. 
 Prepare the following configMap file, replace the {{ .chart }} and {{ .release }} with the content from the default configMap file created by helm.
-
+```
 apiVersion: v1
 kind: ConfigMap
 metadata:
