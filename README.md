@@ -146,4 +146,50 @@ data:
     }
   ]
  ```
+#### Create the HPA object 
+below is a sample that you can use to create one 
+```
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-test
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hpa-test
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metricName: myapp_custom_metric
+      targetAverageValue: 20
+   ```
+
+Validate HPA object is created 
+```
+k get hpa hpa-test
+NAME      REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+hpa-test   Deployment/hpa-test   0/20      1         10        1          3h
+```
+
+#### 4. HPA scaling test 
+```
+#Simulate the traffic to the application and check the HPA object it should scale up the object based on the load
+
+kubectl get hpa hpa-test -w 
+
+
+
+
+
+
+
+
+
+
+
+
 
