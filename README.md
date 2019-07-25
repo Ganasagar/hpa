@@ -23,8 +23,20 @@ cd charts
 ```
 Configure parameters for our installation. 
 ```
-## Configuration
+While you can add and custom tweak the installation based on the parameters, the two options that are vital are 
+  a. prometheus.url
+  b. port
+Edit the values.yaml file to add these changes below is the sample
 
+# Url to access prometheus
+prometheus:
+  url: http://prometheus.istio-system.svc.cluster.local
+  port: 9090
+```
+
+Additional configuration parameters
+## Configuration
+```
 The following table lists the configurable parameters of the Prometheus Adapter chart and their default values.
 
 | Parameter                       | Description                                                                     | Default                                     |
